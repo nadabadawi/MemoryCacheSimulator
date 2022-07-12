@@ -39,7 +39,6 @@ int main()
             binfile << to_string(valid);
             if (valid)
                 binfile << ' ' << tag << ' ' << data;
-            if (i != number_of_lines - 1)
             binfile << '\n';
         }
     }
