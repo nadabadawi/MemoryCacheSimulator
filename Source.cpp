@@ -5,7 +5,7 @@
 #include <iomanip>
 using namespace std;
 
-const int n = 4;
+const int n = 1;
 const int line_size = 16; //16, 32, 64, 128  --> 4, 5, 6, 7
 const int CACHE_SIZE = 64 * 1024;
 const int ADDRESS_SIZE = 32;
@@ -198,7 +198,8 @@ void read_from_cache(uint32_t address, int& HIT, int& MISS, cacheLine** cache) {
 
     // A boolean flag to check if we found the data inside the cache or not
     bool flag = false;
-
+    unsigned int tag_replaced;
+    int counter=0;
     // Looping on the lines of the selected set to search the desired location
     //cout << "Current tag: " << tagInString << endl;
     for (int i = 0; i < n; i++)
@@ -217,17 +218,22 @@ void read_from_cache(uint32_t address, int& HIT, int& MISS, cacheLine** cache) {
         // Note: We are doing it random as proved to be good
 
         // Generating a random number within the range of lines per set
-        unsigned int tag_replaced = 0 + (rand() % n);
+        do {
+            tag_replaced =(rand() % n);
+            counter++;
+        } while (cache[index][tag_replaced].validBit == '1' && counter != n);
+
         cache[index][tag_replaced].tag = tagInString;
         cache[index][tag_replaced].validBit = '1';
         MISS++;
+
     }
 }
 
 int main()
 {
     int fileSize;
-    string fileName = "Test_Case(4,16).txt";
+    string fileName = "Test_Case(1,16).txt";
     char* file = readFile(fileName, fileSize);
     auto cache = cacheInfo(file, line_size * 8, tag_bits, lineNum, fileSize);
 
