@@ -8,13 +8,10 @@
 #include <set> 
 using namespace std;
 
-set<int> sets;
-std::set<int>::iterator it1;
-std::set<int>::iterator it2;
-std::set<int>::iterator it3;
-const int n = 2;
-const int line_size = 4; //16, 32, 64, 128  --> 4, 5, 6, 7
-const int CACHE_SIZE = 64 ;
+
+const int n = 1;
+const int line_size = 16; //16, 32, 64, 128  --> 4, 5, 6, 7
+const int CACHE_SIZE = 64 * 1024 ;
 const int ADDRESS_SIZE = 32;
 
 int byte_offset_bits = log2(line_size);
@@ -193,18 +190,18 @@ cacheLine** cacheInfo(char* file, int dataSize, int tagSize, int indexSize, int 
         else
             word = word + fileString[i];
     }
-    for (int i = 0; i < lineNum; i++)
+    /*for (int i = 0; i < lineNum; i++)
     {
         for (int j = 0; j < n; j++)
         {
             cout << cache[i][j].validBit << " " << cache[i][j].tag << endl;
         }
-    }
+    }*/
     return cache;
 }
 
 // A function to read from the cache and set hit and miss values
-void read_from_cache(uint32_t address, int& HIT, int& MISS, cacheLine** cache) {
+void read_from_cache(uint32_t address, double& HIT, double& MISS, cacheLine** cache) {
     // getting index(It will act as the set number)
     // shifting to the left to get rid of the offset
     //unsigned int index = ExtractBitsFromUint(address, byte_offset_bits, byte_offset_bits + index_bits);
@@ -216,31 +213,23 @@ void read_from_cache(uint32_t address, int& HIT, int& MISS, cacheLine** cache) {
     // shifting to the left by 32 - #bits of index - #bits of offset to get rid of the offset and index
     int shifted_bits = index_bits + byte_offset_bits;
     unsigned int TAG = address >> shifted_bits;
-    cout << "Tag: " << TAG << endl;
-    cout << "Index: " << index << endl;
-    //bitset<32> set = TAG;
-
     string tagInString = DecToBin(TAG);
-    cout << "TagInString: " << tagInString << "  " << tagInString.length() << endl;
     int size = tagInString.size();
     for (int i = 0; i < (tag_bits - size); i++)
     {
 
         tagInString = "0" + tagInString;
     }
-    cout << tagInString << endl;
     // A boolean flag to check if we found the data inside the cache or not
     bool flag = false;
     unsigned int tag_replaced;
     int counter=0;
     // Looping on the lines of the selected set to search the desired location
-    //cout << "Current tag: " << tagInString << endl;
     for (int i = 0; i < n; i++)
     {
-        //cout << "Cache elemnt Tag: " << cache[index][i].tag << endl;
         if (cache[index][i].tag == tagInString && cache[index][i].validBit == '1') // Data Found
         {
-            cout << "Line Found!\n";
+            //cout << "Line Found!\n";
             HIT++;
             flag = true;
             break;
@@ -257,7 +246,7 @@ void read_from_cache(uint32_t address, int& HIT, int& MISS, cacheLine** cache) {
             {
                 cache[index][i].tag = tagInString;
                 cache[index][i].validBit = '1';
-                cout << "Data stored!\n";
+                //cout << "Data stored!\n";
                 flag2 = true;
                 break;
             }
@@ -267,7 +256,7 @@ void read_from_cache(uint32_t address, int& HIT, int& MISS, cacheLine** cache) {
             tag_replaced = (rand() % n);
             cache[index][tag_replaced].tag = tagInString;
             cache[index][tag_replaced].validBit = '1';
-            cout << "Data stored after capacity miss (random insertion)!\n";
+            //cout << "Data stored after capacity miss (random insertion)!\n";
         }
         MISS++;
     }
@@ -276,43 +265,41 @@ void read_from_cache(uint32_t address, int& HIT, int& MISS, cacheLine** cache) {
 int main()
 {
     int fileSize;
-    //string fileName = "miss_set_2.txt"; 
-    string fileName = "fifty_set_2.txt";
+    //string fileName = "fifty_set_2.txt";
+    string fileName = "Test_Case(1,16).txt";
 
     char* file = readFile(fileName, fileSize);
     auto cache = cacheInfo(file, line_size * 8, tag_bits, lineNum, fileSize);
   
 
-    int HIT = 0;
-    int MISS = 0;
+    double HIT = 0;
+    double MISS = 0;
     ofstream out;
-    out.open(("exp1_16.csv"), ios::app);
+    out.open(("res1(1,16).csv"), ios::app);
     if (out.fail())
         cout << "file failed to open \n";
     srand(time(0));
     uint32_t address;
-    //cout << "Tag: " << tag_bits << "Index: " << index_bits << "Bte off: " << byte_offset_bits << endl;
-    //cout << "Direct Mapped Cache Simulator\n";
-
-    int no_of_iterations = 16;
+    int no_of_iterations = 1000000;
     for (int inst = 0; inst < no_of_iterations; inst++)
     {
-        address = memGenValidate();
+        address = memGen6();
         read_from_cache(address, HIT, MISS, cache);
-        cout << "0x" << setfill('0') << setw(8) << hex << address << " (" << HIT << ")" << " (" << MISS << ") \n";
+        cout << "0x" << setfill('0') << setw(8) << hex << address;
+        cout<< " (" << HIT << ")" << " (" << MISS << ") \n";
     }
-    cout << "Hit ratio = " << (100* HIT / no_of_iterations) << endl;
+    cout << "Hit ratio = " << double(100* double(HIT / no_of_iterations)) << endl;
     cout << "HITS : " << HIT << "\n";
     cout << "MISS : " << MISS << "\n";
-    out << line_size << "," << (100 * HIT / no_of_iterations) << endl;
+    out << line_size << "," << double (100 * double(HIT / no_of_iterations)) << endl;
 
-    for (int i = 0; i < lineNum; i++)
+    /*for (int i = 0; i < lineNum; i++)
     {
         for (int j = 0; j < n; j++)
         {
             cout << cache[i][j].validBit << " " << cache[i][j].tag << endl;
         }
-    }
+    }*/
 
     system("pause");
     return 0;
